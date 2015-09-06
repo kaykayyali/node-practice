@@ -1,0 +1,120 @@
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<style>
+  #msgbox{
+    overflow: auto;
+    max-height: 35%;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 20px;
+    padding: 10px;
+    
+  }
+  #appBox {
+    opacity: 0;
+  }
+</style>
+<body>
+  <div class="container" id="appBox">
+    <div class="row">
+      <div class="col-xs-12">
+        <h4>Kaysser's Chat Room</h4>
+      </div>
+    </div>
+      <div class="row">
+  
+          <div class="col-xs-12" id='msgbox' >
+            <ul class="list-unstyled" id='msgList'>
+        
+            </ul>
+          </div>
+          <div class="col-xs-12">
+            <div class="form-group">
+              <input type='text' id='input' placeholder='Say Something' autofocus = true class="form-control" />
+              <button type="button" onclick="handleText()" class="btn btn-primary">Submit</button>
+              <button type="button" onclick="handleImageUrl()" class="btn btn-default">Image</button>
+            </div>
+          </div>
+      </div>
+  </div>
+</body>
+
+
+<script>
+//User Info
+var user = {
+  name: ""
+}
+getUserName()
+function getUserName(){
+  while (user.name === ""){
+    user.name = prompt("Please enter your name");
+  }
+
+}
+if (user.name != null){
+  $('#appBox').css('opacity', 1)
+} else {
+  $('#appBox').empty()
+  $('#appBox').html("<h1>Sorry, We need a Valid name for this app to work correctly.</h1>")
+  $('#appBox').css('text-align', "center")
+  $('#appBox').css('opacity', 1)
+}
+//Start up Express.io
+io = io.connect()
+
+// HANDLE EVENTS
+io.on('addText', function(data) {
+     $("#msgbox").animate({ scrollTop: $("#msgList").height() }, 500);
+  if (data.name === name){
+    $('#msgList').append('<li><h3 class="text-capitalize">Me</h3><h5 style="color:blue;">' + data.content + '</h5></li>')
+  } else {
+    $('#msgList').append('<li class="text-right" style="color:red;"><h3 class="text-capitalize">'+data.name+'</h3><h5 style="color:blue;">' + data.content + '</h5></li>')
+  }
+})
+io.on('addImage', function(data) {
+     $("#msgbox").animate({ scrollTop: $("#msgList").height() }, 500);
+  if (data.name === user.name){
+    $('#msgList').append('<li><h3 class="text-capitalize">Me</h3><img src="' + data.content + '" width="10%"></li>')
+  } else {
+    $('#msgList').append('<li class="text-right" style="color:red;"><h3 class="text-capitalize">'+data.name+'</h3><img src="' + data.content + '" width="200px"></li>')
+  }
+})
+// END HANDLE EVENTS
+
+// NEW EVENTS
+  function handleText(){
+    var input = $('#input').val()
+    if (input.length > 0) {
+      var data = {
+        content: input,
+        name: name
+      }    
+      io.emit('newText', data)
+      $('#input').val('')
+    } 
+  }
+    function handleImageUrl(){
+    var input = $('#input').val()
+    if (input.length > 0) {
+      var exp = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/
+      var found = input.match(exp);
+      if (found === null) {
+        $('#input').val('Invalid Image Url')
+      } else {
+        var data = {
+          content: input,
+          name: user.name
+        }    
+        io.emit('newImageUrl', data)
+        $('#input').val('')
+      } 
+    } 
+  }
+// END NEW EVENTS
+</script>
